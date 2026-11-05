@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en" data-accent="cyan">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#04070d" />
+  <meta name="color-scheme" content="dark" />
+  <title>J.A.R.V.I.S. — Just A Rather Very Intelligent System</title>
+  <meta name="description" content="A voice-first AI assistant interface with an arc reactor HUD, live speech recognition and a local skill engine." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2304070d'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%2335e0ff' stroke-width='2' opacity='.45'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='%2335e0ff' stroke-width='2' opacity='.75'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%2335e0ff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
+  <meta name="application-name" content="J.A.R.V.I.S." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="J.A.R.V.I.S." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════ BOOT SEQUENCE ══════════════════════ -->
+  <div class="boot" id="boot">
+    <div class="boot__aura" aria-hidden="true"></div>
+    <div class="boot__inner">
+      <div class="boot__mark" aria-hidden="true">
+        <svg viewBox="0 0 200 200">
+          <circle class="bm-ring bm-ring--1" cx="100" cy="100" r="92" />
+          <circle class="bm-ring bm-ring--2" cx="100" cy="100" r="74" stroke-dasharray="6 10" />
+          <circle class="bm-ring bm-ring--3" cx="100" cy="100" r="56" />
+          <circle class="bm-core" cx="100" cy="100" r="18" />
+          <g class="bm-tick">
+            <line x1="100" y1="4" x2="100" y2="16" />
+            <line x1="196" y1="100" x2="184" y2="100" />
+            <line x1="100" y1="196" x2="100" y2="184" />
+            <line x1="4" y1="100" x2="16" y2="100" />
+          </g>
+        </svg>
+      </div>
+      <h1 class="boot__title">J.A.R.V.I.S.</h1>
+      <p class="boot__sub">Just A Rather Very Intelligent System</p>
+      <button class="btn btn--primary boot__btn" id="bootBtn" type="button">INITIALIZE SYSTEM</button>
+      <pre class="boot__log" id="bootLog" aria-live="polite"></pre>
+      <p class="boot__meta">v4.2.1 &nbsp;·&nbsp; STARK INDUSTRIES &nbsp;·&nbsp; LOCAL INSTANCE</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ AMBIENT FX ══════════════════════ -->
+  <div class="fx" aria-hidden="true">
+    <div class="fx__grid"></div>
+    <div class="fx__scan"></div>
+    <div class="fx__vignette"></div>
+  </div>
+
+  <!-- ══════════════════════ TOP BAR ══════════════════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__glyph" aria-hidden="true"><i></i></span>
+      <span class="brand__name">J.A.R.V.I.S.</span>
+      <span class="brand__ver">v4.2.1</span>
+    </div>
+
+    <div class="topbar__center">
+      <span class="status-pill" id="statusPill" data-state="standby">
+        <i aria-hidden="true"></i><span id="statusText">STANDBY</span>
+      </span>
+    </div>
+
+    <div class="topbar__right">
+      <div class="clock">
+        <span class="clock__time" id="clockTime">--:--:--</span>
+        <span class="clock__date" id="clockDate">—</span>
+      </div>
+      <button class="icon-btn" id="helpBtn" type="button" aria-label="Command reference" title="Command reference (?)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.1 9a3 3 0 1 1 4.4 2.7c-.9.5-1.5 1.2-1.5 2.3v.5"/><circle cx="12" cy="18" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.2"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════ MAIN GRID ══════════════════════ -->
+  <main class="layout">
+
+    <!-- LEFT: reactor + systems + quick actions -->
+    <div class="col col--left">
+      <section class="panel panel--reactor" aria-label="Reactor core and voice control">
+        <div class="panel__tag"><span>ARC REACTOR</span><span>MK VII</span></div>
+
+        <div class="reactor">
+          <canvas id="hud" aria-hidden="true"></canvas>
+        </div>
+        <div class="reactor__readout" aria-live="off">
+          <b id="modeLabel">IDLE</b>
+          <span id="modeSub">awaiting input</span>
+        </div>
+
+        <div class="meters">
+          <div class="meter" title="Reactor output">
+            <span>POWER</span>
+            <i><b id="barPower" style="width:98%"></b></i>
+            <em id="valPower">98%</em>
+          </div>
+          <div class="meter" title="Core temperature">
+            <span>CORE</span>
+            <i><b id="barCore" style="width:34%"></b></i>
+            <em id="valCore">34%</em>
+          </div>
+          <div class="meter" title="Uplink integrity">
+            <span>UPLINK</span>
+            <i><b id="barUplink" style="width:88%"></b></i>
+            <em id="valUplink">88%</em>
+          </div>
+        </div>
+
+        <button class="mic" id="micBtn" type="button" aria-pressed="false" aria-label="Start listening">
+          <span class="mic__halo" aria-hidden="true"></span>
+          <svg class="mic__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+            <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/>
+          </svg>
+          <span class="mic__label" id="micLabel">TAP TO SPEAK</span>
+        </button>
+        <p class="mic__note" id="micNote">Voice input requires a Chromium browser</p>
+      </section>
+
+      <section class="panel panel--systems" aria-label="Live system telemetry">
+        <div class="panel__tag"><span>SYSTEMS</span><span id="sysTick">LIVE</span></div>
+        <dl class="telemetry" id="telemetry">
+          <div><dt>BATTERY</dt><dd id="tBattery">—</dd></div>
+          <div><dt>NETWORK</dt><dd id="tNetwork">—</dd></div>
+          <div><dt>CORES</dt><dd id="tCores">—</dd></div>
+          <div><dt>TIMEZONE</dt><dd id="tTz">—</dd></div>
+          <div><dt>SESSION</dt><dd id="tSession">00:00:00</dd></div>
+          <div><dt>VOICE</dt><dd id="tVoice">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel panel--quick" aria-label="Quick commands">
+        <div class="panel__tag"><span>QUICK COMMANDS</span><span>06</span></div>
+        <div class="chips" id="quickChips">
+          <button class="chip" type="button" data-cmd="What's the weather?">Weather</button>
+          <button class="chip" type="button" data-cmd="Set a timer for 2 minutes">Timer</button>
+          <button class="chip" type="button" data-cmd="Tell me a joke">Joke</button>
+          <button class="chip" type="button" data-cmd="Show my notes">Notes</button>
+          <button class="chip" type="button" data-cmd="Run diagnostics">Diagnostics</button>
+          <button class="chip" type="button" data-cmd="Tell me about Iron Man">Wikipedia</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- CENTER: transcript + composer -->
+    <section class="col col--center">
+      <div class="panel panel--chat">
+        <div class="chat__head">
+          <div class="chat__title">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            CONVERSATION LOG
+          </div>
+          <div class="chat__tools">
+            <button class="text-btn" id="muteBtn" type="button" aria-pressed="false" title="Mute spoken replies">VOICE ON</button>
+            <button class="text-btn" id="clearBtn" type="button" title="Clear the conversation">CLEAR</button>
+          </div>
+        </div>
+
+        <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions text">
+          <!-- messages injected here -->
+        </div>
+
+        <div class="typing" id="typing" hidden>
+          <span></span><span></span><span></span>
+          <em>processing</em>
+        </div>
+
+        <form class="composer" id="composer" autocomplete="off">
+          <div class="composer__field">
+            <span class="composer__prompt" aria-hidden="true">&gt;</span>
+            <label class="sr-only" for="input">Message J.A.R.V.I.S.</label>
+            <input id="input" name="input" type="text" placeholder="Speak, or type a command…" autocomplete="off" autocapitalize="off" enterkeyhint="send" spellcheck="false" />
+            <span class="composer__interim" id="interim" aria-hidden="true"></span>
+          </div>
+          <button class="circle-btn" id="composerMic" type="button" aria-label="Voice input" title="Voice input (Ctrl+Space)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg>
+          </button>
+          <button class="circle-btn circle-btn--send" type="submit" aria-label="Send" title="Send (Enter)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+        <p class="composer__hint" id="hint">Enter to send &nbsp;·&nbsp; Ctrl + Space to talk &nbsp;·&nbsp; Type “help” for the full command list</p>
+      </div>
+    </section>
+
+    <!-- RIGHT: schedule + memory -->
+    <aside class="col col--right">
+      <div class="panel panel--stack">
+        <div class="tabs" role="tablist" aria-label="Assistant data">
+          <button class="tab is-active" id="tabSchedule" role="tab" aria-selected="true" aria-controls="paneSchedule" type="button">SCHEDULE</button>
+          <button class="tab" id="tabMemory" role="tab" aria-selected="false" aria-controls="paneMemory" type="button">MEMORY</button>
+        </div>
+
+        <div class="tabpane is-active" id="paneSchedule" role="tabpanel" aria-labelledby="tabSchedule">
+          <div class="pane__head">
+            <span>ACTIVE TIMERS &amp; REMINDERS</span>
+            <em id="schedCount">0</em>
+          </div>
+          <ul class="items" id="scheduleList"></ul>
+          <p class="empty" id="scheduleEmpty">No timers running.<br /><span>Try “set a timer for 5 minutes”.</span></p>
+        </div>
+
+        <div class="tabpane" id="paneMemory" role="tabpanel" aria-labelledby="tabMemory" hidden>
+          <div class="pane__head">
+            <span>SAVED NOTES</span>
+            <em id="noteCount">0</em>
+          </div>
+          <ul class="items" id="noteList"></ul>
+          <p class="empty" id="noteEmpty">Memory is empty.<br /><span>Try “note that the lab is out of coffee”.</span></p>
+        </div>
+      </div>
+
+      <section class="panel panel--quote" aria-label="Status line">
+        <div class="panel__tag"><span>DIRECTIVE</span><span>01</span></div>
+        <p class="quote" id="directiveText">“Sometimes you gotta run before you can walk.”</p>
+        <p class="quote__by">— TONY STARK</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span><i class="dot" aria-hidden="true"></i> UPLINK <b id="uplinkText">ONLINE</b></span>
+    <span class="statusbar__mid" id="statusMessage">ALL SYSTEMS NOMINAL</span>
+    <span>ENTER SEND &nbsp;·&nbsp; CTRL+SPACE TALK</span>
+  </footer>
+
+  <!-- ══════════════════════ SETTINGS ══════════════════════ -->
+  <dialog class="modal" id="settingsDialog" aria-labelledby="settingsTitle">
+    <form method="dialog" class="modal__inner">
+      <header class="modal__head">
+        <div>
+          <p class="modal__kicker">PREFERENCES</p>
+          <h2 id="settingsTitle">System Configuration</h2>
+        </div>
+        <button class="icon-btn" value="close" aria-label="Close settings" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="modal__body">
+        <div class="field-row">
+          <label for="setName">Call sign</label>
+          <input id="setName" type="text" maxlength="28" placeholder="sir" />
+        </div>
+
+        <div class="field-row">
+          <label for="setVoice">Voice</label>
+          <select id="setVoice"><option value="">System default</option></select>
+        </div>
+
+        <div class="field-row">
+          <label for="setLang">Recognition language</label>
+          <select id="setLang">
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="en-IN">English (India)</option>
+            <option value="en-AU">English (Australia)</option>
+            <option value="en-CA">English (Canada)</option>
+          </select>
+        </div>
+
+        <div class="slider-row">
+          <label for="setRate">Speech rate <em id="rateVal">1.0×</em></label>
+          <input id="setRate" type="range" min="0.6" max="1.5" step="0.05" value="1" />
+        </div>
+
+        <div class="slider-row">
+          <label for="setPitch">Pitch <em id="pitchVal">0.9</em></label>
+          <input id="setPitch" type="range" min="0.4" max="1.6" step="0.05" value="0.9" />
+        </div>
+
+        <div class="field-row">
+          <label for="setCity">Home city <small>for weather</small></label>
+          <input id="setCity" type="text" maxlength="60" placeholder="Kolkata" />
+        </div>
+
+        <div class="field-row">
+          <span class="field-label">Accent</span>
+          <div class="swatches" id="swatches" role="radiogroup" aria-label="Interface accent colour">
+            <button type="button" class="swatch is-active" data-accent="cyan" role="radio" aria-checked="true" aria-label="Cyan" style="--sw:#35e0ff"></button>
+            <button type="button" class="swatch" data-accent="amber" role="radio" aria-checked="false" aria-label="Amber" style="--sw:#ffb347"></button>
+            <button type="button" class="swatch" data-accent="jade" role="radio" aria-checked="false" aria-label="Jade" style="--sw:#4dffc3"></button>
+            <button type="button" class="swatch" data-accent="violet" role="radio" aria-checked="false" aria-label="Violet" style="--sw:#b391ff"></button>
+            <button type="button" class="swatch" data-accent="crimson" role="radio" aria-checked="false" aria-label="Crimson" style="--sw:#ff5a6e"></button>
+          </div>
+        </div>
+
+        <div class="switch-row">
+          <div><label for="setContinuous">Continuous conversation</label><small>Keep the microphone open between commands</small></div>
+          <input id="setContinuous" type="checkbox" class="switch" />
+        </div>
+
+        <div class="switch-row">
+          <div><label for="setWake">Wake word</label><small>Only respond when the phrase contains “Jarvis”</small></div>
+          <input id="setWake" type="checkbox" class="switch" />
+        </div>
+
+        <div class="switch-row">
+          <div><label for="setMute">Silent mode</label><small>Suppress spoken replies</small></div>
+          <input id="setMute" type="checkbox" class="switch" />
+        </div>
+      </div>
+
+      <footer class="modal__foot">
+        <button class="btn btn--ghost" id="installBtn" type="button" hidden>Install app</button>
+        <button class="btn btn--ghost" id="resetBtn" type="button">Wipe memory</button>
+        <button class="btn btn--primary" value="close" type="submit">DONE</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ══════════════════════ HELP ══════════════════════ -->
+  <dialog class="modal modal--wide" id="helpDialog" aria-labelledby="helpTitle">
+    <form method="dialog" class="modal__inner">
+      <header class="modal__head">
+        <div>
+          <p class="modal__kicker">OPERATIONS MANUAL</p>
+          <h2 id="helpTitle">Command Reference</h2>
+        </div>
+        <button class="icon-btn" value="close" aria-label="Close reference" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="modal__body help-grid" id="helpGrid"></div>
+      <footer class="modal__foot">
+        <p class="modal__note">Speech recognition and synthesis run in your browser. No accounts, no API keys, nothing leaves this device except the queries you explicitly ask for.</p>
+        <button class="btn btn--primary" value="close" type="submit">CLOSE</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <noscript>
+    <div style="position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:#04070d;color:#dbe9f4;font-family:ui-monospace,monospace;text-align:center;padding:24px">
+      <div>
+        <h1 style="letter-spacing:.3em;font-weight:400;font-size:1rem">J.A.R.V.I.S. OFFLINE</h1>
+        <p style="color:#8ba3b6;max-width:38ch;line-height:1.7">My runtime is compiled in JavaScript. Enable it for this page and I'll come online.</p>
+      </div>
+    </div>
+  </noscript>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
