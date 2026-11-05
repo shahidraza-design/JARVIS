@@ -22,7 +22,7 @@ const abs = (path) => new URL(path, self.location.href).href;
 const SHELL_PATHS = [
   "./",
   "index.html",
-  "manifest.webmanifest",
+  "manifest.json",
   "assets/css/base.css",
   "assets/css/app.css",
   "assets/js/app.js",
@@ -71,7 +71,7 @@ self.addEventListener("activate", (event) => {
 });
 
 const isShellAsset = (url) =>
-  /\.(?:js|css|png|svg|webmanifest|woff2?)$/i.test(url.pathname) ||
+  /\.(?:js|css|png|svg|json|woff2?)$/i.test(url.pathname) ||
   url.pathname.endsWith("/") ||
   url.pathname.endsWith("/index.html");
 
