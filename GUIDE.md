@@ -2,6 +2,10 @@
 
 Written for a non-developer. No jargon without a translation.
 
+**Current status:** Phases 1 and 2 are done — the app is built, tested, installable and works
+offline. Phase 3 is ready and waiting on one setting in your GitHub repository (four clicks,
+section 5). Phase 4 is a decision for you. Phase 5 is optional and costs money.
+
 ---
 
 ## 1. The honest one-paragraph version
@@ -172,41 +176,57 @@ This is the step most people skip, and it's the one that decides whether the app
 
 **Done when:** you've set a timer, saved a note, heard it speak, and seen it survive a refresh.
 
-### Phase 2 — Make it installable and offline (I do it, ~30 minutes, free)
+### Phase 2 — Make it installable and offline ✅ DONE
 
-Right now it's a web page. This phase turns it into a proper app.
+1. ✅ **Manifest added** — name, icons, standalone display, so the browser offers installation.
+2. ✅ **Service worker added** — the interface loads from cache instantly and works offline.
+3. ✅ **App icons added** — full-size, small, maskable (Android) and iOS versions.
+4. ✅ **"Install app" button** added to settings, shown when your browser supports installing.
 
-1. I add a **manifest** (name, icon, colours) so it can be installed.
-2. I add a small **service worker** so the interface loads offline and the app opens instantly.
-3. I add **app icons** for phone and desktop home screens.
-4. Result: on your phone, "Add to Home Screen" gives a real JARVIS icon that opens full-screen,
-   with no browser bars — indistinguishable from a downloaded app. Same on desktop Chrome.
+What you get: on Android or desktop Chrome, JARVIS installs to your home screen / applications
+with a real icon and opens full-screen with no address bar. On iPhone: Share → Add to Home Screen.
+With no internet, the interface, notes, timers and every local skill still work — only weather and
+Wikipedia need a connection, and they say so plainly.
 
-Note honestly: this makes it *installable and offline*, but reminders still need the app open.
-True background delivery needs a server, which is Phase 5 territory.
+Honest limit: installing makes it *feel* and *work* like an app, but reminders still need the app
+open. True background delivery needs a server.
 
-**You do:** nothing. Just re-open the app afterwards.
+**You do:** nothing. Look for **Settings → Install app** once it's on a proper web address
+(Phase 3).
 
-### Phase 3 — Give it a permanent home on the internet (mostly you, ~20 minutes, free)
+### Phase 3 — Give it a permanent home on the internet ✅ READY — 4 clicks left, free
 
 This is the **single highest-value step**. It fixes the microphone problem, makes the app reachable
 from your phone, and gives you a link you can bookmark forever.
 
 The app is entirely static — no database, no server logic — so free hosting is a perfect fit.
-Recommended: **GitHub Pages**, because your code is already on GitHub.
 
-1. I merge the work into the `main` branch of your `shahidraza-design/JARVIS` repository.
-2. In GitHub: **Settings → Pages → Source: Deploy from a branch → Branch: `main` / `root` → Save**.
-3. Wait about a minute. GitHub gives you a URL like
-   `https://shahidraza-design.github.io/JARVIS/`.
-4. Open that URL. It's HTTPS, so the microphone works properly, and you can install it on your
-   phone from there.
+**Already done:**
+1. ✅ All the work is merged into the `main` branch of `shahidraza-design/JARVIS`.
+2. ✅ Paths are relative, so the app works correctly in a sub-folder like `/JARVIS/` — verified by
+   a test that simulates exactly this deployment.
+3. ✅ The icon/manifest files are GitHub-Pages-safe (`.json` manifest, `.nojekyll` marker), because
+   Pages serves unknown file types with the wrong content type and that silently breaks installing.
 
-Alternative if you'd rather not touch GitHub settings: **Netlify Drop** — drag the folder onto
-`app.netlify.com/drop`, get a link in seconds. Either is fine.
+**Your four clicks** (the one thing I can't do — enabling Pages needs a permission my access token
+doesn't have):
+4. Open **https://github.com/shahidraza-design/JARVIS/settings/pages**
+5. Under **Source**, choose **Deploy from a branch**.
+6. Set **Branch: `main`** and folder **`/ (root)`**, then press **Save**.
+7. Wait about a minute and reload that page — GitHub shows your address, normally
+   **`https://shahidraza-design.github.io/JARVIS/`**
+
+Open that address on your phone. It's HTTPS, so the microphone works properly, and you can install
+it to your home screen from there.
+
+Then come back and tell me it's live — I'll check the deployed URL and confirm everything is
+serving correctly.
 
 **Cost:** free. **Catch:** anyone with the link can use it (it's a public page). Nothing private is
 stored on the server — notes and timers stay in each visitor's own browser.
+
+Alternative if you'd rather not touch GitHub settings: **Netlify Drop** — drag the folder onto
+`app.netlify.com/drop` and get a link in seconds. Either is fine.
 
 ### Phase 4 — Decide what "usable" means to you (a conversation, 5 minutes)
 
@@ -254,15 +274,14 @@ If you choose A, we skip this entirely and your JARVIS stays private, offline-ca
 
 ---
 
-## 7. What I'd do first
+## 7. What's next, concretely
 
-If it were mine, in this order:
-
-1. **Phase 1 today** — five minutes, and it tells you whether the voice experience feels right.
-2. **Phase 3 next** — a permanent HTTPS link is what turns "a demo in a chat window" into
-   "my assistant". It also fixes the mic for good, and lets you install it on your phone.
-3. **Phase 2 alongside** — makes that installed icon feel like a real app.
-4. **Decide A or B.** If A, we polish. If B, we budget a key and I build the proxy.
+1. ~~Phase 2~~ — done: installable, offline, real icons.
+2. **Switch on GitHub Pages** (four clicks above). That is the last piece of "usable anywhere".
+3. **Try the voice in its own tab** — Phase 1, five minutes. If the mic or sound misbehaves, tell me
+   and I'll fix it rather than guess.
+4. **Decide A or B.** If A, I polish what exists (morning briefing, unmissable alarm, faster
+   replies). If B, we pick a provider, you get a key, and I build the small proxy that keeps it safe.
 
 Everything up to and including Phase 3 is free, needs no accounts beyond GitHub, and cannot break
 what already works.

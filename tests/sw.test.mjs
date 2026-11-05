@@ -55,12 +55,12 @@ function makeCaches() {
   };
 }
 
-async function boot({ offline = false } = {}) {
+async function boot({ offline = false, origin = ORIGIN, swPath = "/sw.js" } = {}) {
   const handlers = new Map();
   const caches = makeCaches();
   const fetched = [];
   const self = {
-    location: { origin: ORIGIN, href: `${ORIGIN}/sw.js` },
+    location: { origin, href: `${origin}${swPath}` },
     addEventListener: (type, fn) => handlers.set(type, fn),
     skipWaiting: async () => {},
     clients: { claim: async () => {} },
@@ -115,7 +115,7 @@ test("install precaches the whole app shell", async () => {
   assert.ok(store, "shell cache should exist");
   for (const required of [
     "index.html",
-    "manifest.webmanifest",
+    "manifest.json",
     "assets/css/app.css",
     "assets/js/app.js",
     "assets/js/brain.js",
@@ -123,6 +123,23 @@ test("install precaches the whole app shell", async () => {
   ]) {
     const key = new URL(required, `${ORIGIN}/`).href;
     assert.ok(store.has(key), `expected ${required} to be precached`);
+  }
+});
+
+test("the shell resolves correctly when deployed under a subpath", async () => {
+  // GitHub Pages project sites live at /<repo>/, so every precached key must
+  // stay inside that scope — otherwise the app 404s its own assets.
+  const sw = await boot({ origin: "https://shahidraza-design.github.io", swPath: "/JARVIS/sw.js" });
+  const pending = [];
+  await sw.fire("install", { waitUntil: (p) => pending.push(p) });
+  await Promise.all(pending);
+
+  const store = sw.caches._stores.get("jarvis-shell-v1");
+  assert.ok(store.has("https://shahidraza-design.github.io/JARVIS/index.html"));
+  assert.ok(store.has("https://shahidraza-design.github.io/JARVIS/assets/js/app.js"));
+  assert.ok(store.has("https://shahidraza-design.github.io/JARVIS/manifest.json"));
+  for (const key of store.keys()) {
+    assert.ok(key.startsWith("https://shahidraza-design.github.io/JARVIS/"), `escaped scope: ${key}`);
   }
 });
 
