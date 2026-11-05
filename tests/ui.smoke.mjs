@@ -113,17 +113,23 @@ const $ = (s) => window.document.querySelector(s);
 const click = (el) => el?.dispatchEvent(new window.MouseEvent("click", { bubbles: true, cancelable: true }));
 const input = $("#input");
 const log = $("#log");
-const say = async (text, wait = 400) => {
+// Sends a command and returns ONLY the assistant messages it produced.
+// Timers and reminders can surface a message while a later command is running,
+// so slicing from the pre-command count keeps each assertion honest.
+const say = async (text) => {
   const before = log.querySelectorAll(".msg--assistant").length;
   input.value = text;
   input.dispatchEvent(new window.Event("input", { bubbles: true }));
   $("#composer").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
-  // replies are awaited & typewriter-paced: poll for the assistant message
   for (let i = 0; i < 60; i++) {
-    if (log.querySelectorAll(".msg--assistant").length > before) return true;
+    const now = [...log.querySelectorAll(".msg--assistant")];
+    if (now.length > before) {
+      await sleep(120); // let any synchronous follow-up settle
+      return [...log.querySelectorAll(".msg--assistant")].slice(before).map((el) => el.textContent);
+    }
     await sleep(100);
   }
-  return false;
+  return [];
 };
 
 click($("#bootBtn"));
@@ -134,7 +140,7 @@ check("HUD canvas sized", $("#hud").width > 0 && $("#hud").height > 0, `${$("#hu
 const cmds = [
   ["what time is it", /:/],
   ["what is 15% of 240", /36/],
-  ["set a timer for 2 seconds", /timer|2 second|countdown/i],
+  ["set a timer for 90 seconds", /90|timer|countdown/i],
   ["note that the lab needs coffee", /note/i],
   ["show my notes", /coffee/i],
   ["convert 10 km to miles", /6\.2/],
@@ -146,18 +152,26 @@ const cmds = [
   ["help", /timer|weather|note/i],
 ];
 for (const [cmd, re] of cmds) {
-  const ok = await say(cmd);
-  const text = log.querySelectorAll(".msg--assistant")[log.querySelectorAll(".msg--assistant").length - 1]?.textContent || "";
-  check(`command → reply: "${cmd}"`, ok && re.test(text), text.replace(/\s+/g, " ").slice(0, 90));
+  const fresh = (await say(cmd)).join(" ").replace(/\s+/g, " ").trim();
+  check(`command → reply: "${cmd}"`, Boolean(fresh) && re.test(fresh), fresh.slice(0, 90));
 }
 
 // timer should fire on its own
+// A fresh 2-second timer, watched until it announces itself.
+// (The earlier 90-second timer is cancelled so it can't fire mid-test.)
+await say("cancel the timer");
+const beforeFire = log.querySelectorAll(".msg--assistant").length;
 await say("set a timer for 2 seconds");
-const beforeTimer = log.querySelectorAll(".msg--assistant").length;
-let fired = false;
-for (let i = 0; i < 60 && !fired; i++) { await sleep(100); fired = log.querySelectorAll(".msg--assistant").length > beforeTimer; }
-const timerMsg = log.querySelectorAll(".msg--assistant")[log.querySelectorAll(".msg--assistant").length - 1]?.textContent.replace(/\s+/g, " ") || "";
-check("2s timer fires on its own", fired && /2 second|timer/i.test(timerMsg), timerMsg.slice(-70));
+let firedText = "";
+for (let i = 0; i < 80 && !firedText; i++) {
+  await sleep(100);
+  firedText =
+    [...log.querySelectorAll(".msg--assistant")]
+      .slice(beforeFire)
+      .map((el) => el.textContent.replace(/\s+/g, " ").trim())
+      .find((t) => /time'?s up|timer:.*2-second|is complete/i.test(t)) || "";
+}
+check("2s timer fires on its own", Boolean(firedText), firedText.slice(0, 80));
 
 // voice path
 click($("#micBtn"));
@@ -167,9 +181,12 @@ check("speech recogniser constructed on mic press", !!recog);
 if (recog) {
   const before = log.querySelectorAll(".msg--assistant").length;
   recog.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: "what is 2 plus 2" }], { isFinal: true, 0: { transcript: "what is 2 plus 2" } })] });
-  for (let i = 0; i < 40 && log.querySelectorAll(".msg--assistant").length <= before; i++) await sleep(100);
-  const last = log.querySelector(".msg--assistant:last-of-type");
-  check("voice input produces a reply", log.querySelectorAll(".msg--assistant").length > before, (last?.textContent || "").slice(0, 60));
+  let fresh = [];
+  for (let i = 0; i < 50 && !fresh.length; i++) {
+    await sleep(100);
+    fresh = [...log.querySelectorAll(".msg--assistant")].slice(before).map((el) => el.textContent);
+  }
+  check("voice input produces a reply", fresh.length > 0 && /4|four/.test(fresh.join(" ")), fresh.join(" ").replace(/\s+/g, " ").slice(0, 70));
 }
 
 // theme / settings

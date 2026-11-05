@@ -79,6 +79,7 @@ const dom = {
     wake: $("#setWake"),
     mute: $("#setMute"),
     reset: $("#resetBtn"),
+    install: $("#installBtn"),
   },
 };
 
@@ -1035,6 +1036,47 @@ function init() {
   setInterval(driftMeters, 2400);
   setInterval(rotateDirective, 42000);
   updateNetwork();
+}
+
+/* ─────────────────────── install & offline ─────────────────────── */
+
+// Browsers fire this when the app qualifies for installation. We stash the
+// event and reveal a button in settings; Chrome/Edge show their own prompt too.
+let installPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  if (dom.install) dom.install.hidden = false;
+});
+
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  if (dom.install) dom.install.hidden = true;
+  toast("Installed", "J.A.R.V.I.S. now has a home-screen icon.");
+});
+
+dom.install?.addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  try {
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") toast("Installing", "Adding J.A.R.V.I.S. to your device.");
+  } catch {
+    /* the prompt can only be used once — a failure here is harmless */
+  }
+  installPrompt = null;
+  dom.install.hidden = true;
+});
+
+// Offline shell. Registered after load so it never delays first paint, and
+// skipped on file:// where service workers aren't allowed.
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js", { scope: "./" }).catch((err) => {
+      console.info("Offline mode unavailable:", err?.message || err);
+    });
+  });
 }
 
 init();
