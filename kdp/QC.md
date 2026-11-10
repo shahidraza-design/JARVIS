@@ -81,6 +81,11 @@ Recorded because they are the reason to run it again.
     tolerance. It was centred on a point rather than anchored upward.
 13. Barcode zone had to be checked against text; the first version of the check used
     mixed top-down/bottom-up coordinates and produced false results in both directions.
+14. **Back-cover blurb was letter-spaced and overran its measure.** Character spacing
+    belongs to the PDF graphics state, so it carried on past the end of every tracked
+    heading and into the body text after it. Both cover scripts now set it on every text
+    block, zero included. The blurb's line breaks changed once fixed, which is why the
+    earlier version read a line long.
 
 ---
 

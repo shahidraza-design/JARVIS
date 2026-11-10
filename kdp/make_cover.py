@@ -102,8 +102,10 @@ def drawn(c: canvas.Canvas, text: str, x: float, y: float, font: str,
     to = c.beginText(x, y)
     to.setFont(font, size)
     to.setFillColor(colour)
-    if tracking:
-        to.setCharSpace(tracking)
+    # Always set it, even to zero: char spacing lives in the PDF graphics
+    # state and survives BT/ET, so a letterspaced line would otherwise leak
+    # into every later line of body text.
+    to.setCharSpace(tracking)
     to.textOut(text)
     c.drawText(to)
 

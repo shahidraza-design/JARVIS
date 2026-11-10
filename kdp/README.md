@@ -7,6 +7,8 @@ volume in a few seconds.
 kdp/
 ├── sudoku_book.py                 interior generator (puzzles + PDF layout)
 ├── make_cover.py                  full-wrap cover generator (spine maths)
+├── make_cover_v2.py               second cover design: navy, gold 9, engraved grid
+├── make_pack.py                   zips the two upload files + a read-me
 ├── qc.py                          quality check (reads the PDF back)
 ├── QC.md                          what was checked and what was found
 ├── requirements.txt               reportlab
@@ -14,10 +16,15 @@ kdp/
 ├── fonts/                         Playfair Display + its OFL licence
 └── out/
     ├── large-print-sudoku-for-seniors_interior_8.5x11.pdf
-    ├── cover-8.5x11.pdf
+    ├── cover-8.5x11.pdf            style A: cream, drawn grid
+    ├── cover-navy-8.5x11.pdf       style B: navy, gold 9
     ├── large-print-sudoku-for-seniors_puzzles.json
     ├── preview-pages.png
-    └── preview-cover.png
+    ├── preview-cover.png
+    ├── preview-cover-navy.png
+    ├── KDP-upload-pack.zip         interior + one cover + read-me
+    └── artwork/
+        └── front-no-watermark.png  archive copy, see note below
 ```
 
 ---
@@ -191,7 +198,22 @@ reviews to justify it.
 
 ## The cover
 
-`out/cover-8.5x11.pdf` is a full wrap for this exact interior: back cover, spine and
+There are **two finished cover designs**. Both are full wraps built for 126 pages, both
+pass the same checks, and you upload exactly one.
+
+| | Style A — cream | Style B — navy |
+| --- | --- | --- |
+| File | `out/cover-8.5x11.pdf` | `out/cover-navy-8.5x11.pdf` |
+| Script | `make_cover.py` | `make_cover_v2.py` |
+| Grid on front | puzzle 1, read from the JSON | engraved 9×9 grid + gold oldstyle `9` |
+| Reads best | close up, calm and bookish | at thumbnail size on a search page |
+| Printer ink | lighter | heavy solid navy — matte stops it looking like plastic |
+
+Style B is the one to try first if the cover has to win a click against other puzzle
+books: a large gold numeral on dark blue is the strongest shape at 200 px wide. Style A
+is the safer, more traditional look, and much cheaper to print.
+
+Both are built the same way. `out/cover-8.5x11.pdf` is a full wrap for this exact interior: back cover, spine and
 front cover on one sheet, with 0.125 in bleed on the outside edges.
 
 | Spec | Value |
@@ -208,7 +230,8 @@ remove a page from the interior, the spine changes and this wrap will be wrong. 
 finish the interior first, then rebuild the cover:
 
 ```bash
-../.venv/bin/python make_cover.py --out out/cover-8.5x11.pdf --pages 126
+../.venv/bin/python make_cover.py    --out out/cover-8.5x11.pdf      --pages 126
+../.venv/bin/python make_cover_v2.py --out out/cover-navy-8.5x11.pdf --pages 126
 ```
 
 `--pages` must match the interior. The script prints the spine and wrap size it used —
@@ -230,8 +253,22 @@ still builds; the grid just comes out empty.
   clear of the spine folds by 0.0625 in.
 - **Compare against KDP's template** for 8.5 × 11, 126 pages, white paper once more
   before you hit publish. If the page count changed, rebuild.
-- **Cream background is a design choice, not a limitation.** If you prefer to save ink
-  or want a starker look, the colours are four constants at the top of `make_cover.py`.
+- **Background colour is a design choice, not a limitation.** Each script keeps its
+  palette in four constants at the top of the file.
+- **No letter-spacing leaks between lines.** Character spacing is part of the PDF
+  graphics state and survives from one text block to the next, so a letterspaced
+  heading will letter-space every line drawn after it unless it is explicitly reset.
+  Both cover scripts now always set it, including to zero. This bug silently widened
+  the back-cover blurb on an earlier build.
+
+### The pasted AI artwork
+
+`out/artwork/front-no-watermark.png` is the author's AI-generated front-cover image
+with the generator's logo lifted out of the bottom-right corner. It is kept as a
+record, **not** as a deliverable: it is 215 dpi (KDP wants 300), and its title is
+painted into the pixels, so it cannot be re-typeset, re-spelled or re-coloured. If a
+soft-focus painted look is ever wanted, the way to get it is to generate the artwork
+with no text at all and set the type in `make_cover_v2.py` over the top.
 
 ---
 
