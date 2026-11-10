@@ -23,10 +23,10 @@ kdp/
 | Pages | 126 (even, ends on a blank) |
 | Interior | Black & white, white paper |
 | Bleed | None — nothing is printed to the page edge |
-| Margins | 0.69 in left/right, 0.94 in top, 0.92 in bottom |
+| Margins | 0.69 in left/right, 1.09 in to the top line, 0.71 in above the bottom edge |
 | Fonts | All four DejaVu subsets embedded (no system-font dependency) |
 | Puzzles | 100 — 40 Easy, 35 Medium, 25 Hard |
-| Puzzle page | One 7.1 in grid per page, 32 pt bold digits |
+| Puzzle page | One 7.1 in grid per page, 32 pt bold digits (0.32 in tall on paper) |
 | Solutions | All 100, six to a page, starting p.109 |
 
 The 0.69 in side margin clears KDP's inside/gutter minimum (0.375 in for books up to
@@ -147,9 +147,10 @@ Description (edit the bracketed bits, keep it honest):
 
 > Big grids. Big numbers. No squinting.
 >
-> This large-print Sudoku book is printed one puzzle to a page, with digits over half an
-> inch tall on a 7-inch grid — wide open spaces for pencil marks and none of the cramped
-> little squares that make ordinary puzzle books tiring.
+> This large-print Sudoku book is printed one puzzle to a page: a seven-inch grid with
+> digits a third of an inch tall, so there is plenty of clear space around every number
+> for pencil marks — none of the cramped little squares that make ordinary puzzle books
+> tiring.
 >
 > **Inside:**
 > - 100 original Sudoku puzzles, verified to have exactly one solution

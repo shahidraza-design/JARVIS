@@ -563,7 +563,7 @@ def build(args) -> str:
         "was verified to have exactly one solution. They are original to this book and do",
         "not reproduce puzzles published elsewhere.",
         "",
-        "For personal use. Printed in the United States of America.",
+        "For personal use.",
         "",
         f"If you enjoy this book, a review is genuinely appreciated — it helps more",
         "readers find it.",
@@ -623,9 +623,10 @@ def build(args) -> str:
         ("Large print, one puzzle to a page", 15, "serif_b"),
         ("", 4, "sans"),
         ("Every puzzle here is printed on its own page, seven inches wide, with", 13, "serif"),
-        ("digits over half an inch tall. Nothing is squeezed to fit and no grid", 13, "serif"),
-        ("runs into the fold of the page. If your eyes tire easily, this is the", 13, "serif"),
-        ("format that helps most.", 13, "serif"),
+        ("digits a third of an inch tall — big enough to read at arm's length,", 13, "serif"),
+        ("with room left in every square for pencil marks. Nothing is squeezed", 13, "serif"),
+        ("to fit and no grid runs into the fold of the page. If your eyes tire", 13, "serif"),
+        ("easily, this is the format that helps most.", 13, "serif"),
     ], fonts, 4, args.title)
     c.showPage()
 
