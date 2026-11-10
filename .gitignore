@@ -1,0 +1,4 @@
+# Python tooling (kdp/)
+.venv/
+__pycache__/
+*.pyc
