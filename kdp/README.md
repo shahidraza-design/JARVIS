@@ -198,10 +198,11 @@ reviews to justify it.
 
 ## The cover
 
-There are **two finished cover designs**. Both are full wraps built for 126 pages, both
-pass the same checks, and you upload exactly one.
+**Style A is the cover for this book.** Style B exists as a finished alternate and stays
+in `out/` so it can be reused for a later volume, but it is not the upload file and the
+pack does not contain it.
 
-| | Style A — cream | Style B — navy |
+| | **Style A — cream (chosen)** | Style B — navy (alternate) |
 | --- | --- | --- |
 | File | `out/cover-8.5x11.pdf` | `out/cover-navy-8.5x11.pdf` |
 | Script | `make_cover.py` | `make_cover_v2.py` |
@@ -209,9 +210,11 @@ pass the same checks, and you upload exactly one.
 | Reads best | close up, calm and bookish | at thumbnail size on a search page |
 | Printer ink | lighter | heavy solid navy — matte stops it looking like plastic |
 
-Style B is the one to try first if the cover has to win a click against other puzzle
-books: a large gold numeral on dark blue is the strongest shape at 200 px wide. Style A
-is the safer, more traditional look, and much cheaper to print.
+Why A: at 200 px wide — the size a search result actually shows — its grid still reads
+as a grid, the title is crisp against pale stock, and it looks like a puzzle book rather
+than a poster. Style B is louder, but the gold numeral swamps the grid and the cover
+stops saying "sudoku". A is also far cheaper to print, and it keeps the book free of AI
+imagery, which makes KDP's AI-content question easier to answer truthfully.
 
 Both are built the same way. `out/cover-8.5x11.pdf` is a full wrap for this exact interior: back cover, spine and
 front cover on one sheet, with 0.125 in bleed on the outside edges.
@@ -264,8 +267,9 @@ still builds; the grid just comes out empty.
 ### The pasted AI artwork
 
 `out/artwork/front-no-watermark.png` is the author's AI-generated front-cover image
-with the generator's logo lifted out of the bottom-right corner. It is kept as a
-record, **not** as a deliverable: it is 215 dpi (KDP wants 300), and its title is
+with the generator's logo lifted out of the bottom-right corner. **It is not used in the
+book** — the design was rebuilt in vector instead (see above), which is why the cover in
+this pack contains no AI-generated imagery. It is kept as a record, not as a deliverable: it is 215 dpi (KDP wants 300), and its title is
 painted into the pixels, so it cannot be re-typeset, re-spelled or re-coloured. If a
 soft-focus painted look is ever wanted, the way to get it is to generate the artwork
 with no text at all and set the type in `make_cover_v2.py` over the top.
