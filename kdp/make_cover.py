@@ -323,10 +323,10 @@ def main() -> int:
         print(f"  note: could not load {args.puzzles_json} ({exc}); motif left empty")
 
     args.back_paras = [
-        ["100 Sudoku puzzles, printed one to a page on a seven-inch grid, with",
-         "digits a third of an inch tall. Room to think, room for pencil marks,",
-         "and none of the cramped little squares that make ordinary puzzle",
-         "books tiring."],
+        ["100 Sudoku puzzles, printed one per page on a seven-inch grid, with",
+         "digits about a third of an inch tall. Room to think, room for pencil",
+         "marks, and none of the cramped little squares that make ordinary",
+         "puzzle books tiring."],
     ]
     args.bullets = [
         "40 Easy, 35 Medium, 25 Hard — every one solvable by logic alone",

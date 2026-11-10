@@ -1,12 +1,14 @@
 # Large-Print Sudoku — KDP production pack
 
 Print-ready interior for a paperback, plus the generator that makes it. Rebuild any
-volume in about one second.
+volume in a few seconds.
 
 ```
 kdp/
 ├── sudoku_book.py                 interior generator (puzzles + PDF layout)
 ├── make_cover.py                  full-wrap cover generator (spine maths)
+├── qc.py                          quality check (reads the PDF back)
+├── QC.md                          what was checked and what was found
 ├── requirements.txt               reportlab
 ├── README.md                      this file
 ├── fonts/                         Playfair Display + its OFL licence
@@ -14,7 +16,8 @@ kdp/
     ├── large-print-sudoku-for-seniors_interior_8.5x11.pdf
     ├── cover-8.5x11.pdf
     ├── large-print-sudoku-for-seniors_puzzles.json
-    └── preview-pages.png
+    ├── preview-pages.png
+    └── preview-cover.png
 ```
 
 ---
@@ -63,13 +66,17 @@ Every puzzle is generated from a fixed seed and then checked:
 
 - **Exactly one solution** — the solver enumerates up to two solutions and the puzzle
   is rejected if a second exists.
-- **Easy tier is logic-gentle by construction** — a puzzle only enters the Easy section
-  if it can be finished with naked and hidden singles alone. No guessing required.
+- **Difficulty is earned, not assumed** — every puzzle is graded by a technique solver,
+  and anything it cannot finish is rejected. Easy: naked and hidden singles only
+  (~41 givens). Medium: still singles, but hidden singles are required and there are
+  fewer givens (~32). Hard: needs locked candidates or naked/hidden pairs (~28 givens).
+  So "solvable by logic alone" is verified rather than hoped.
 - **Symmetric clue patterns** — givens are removed in 180° rotational pairs, which is
   why the printed grids look deliberate rather than ragged.
 - **No duplicates** — all 100 grids in a volume are distinct.
-- **Same seed, same book** — rebuilds are byte-stable, so you can fix a typo in the
-  front matter without silently reshuffling the puzzles.
+- **Same seed, same puzzles** — rebuilds reproduce every grid and every line of printed
+  text, so you can fix a typo in the front matter without silently reshuffling the
+  puzzles. The files are not byte-identical, because a PDF carries a creation timestamp.
 
 `out/…puzzles.json` holds every grid and solution, if you ever want to re-verify or
 reuse them.
@@ -151,8 +158,8 @@ Description (edit the bracketed bits, keep it honest):
 
 > Big grids. Big numbers. No squinting.
 >
-> This large-print Sudoku book is printed one puzzle to a page: a seven-inch grid with
-> digits a third of an inch tall, so there is plenty of clear space around every number
+> This large-print Sudoku book is printed one puzzle per page: a seven-inch grid with
+> digits about a third of an inch tall, so there is plenty of clear space around every number
 > for pencil marks — none of the cramped little squares that make ordinary puzzle books
 > tiring.
 >
@@ -207,7 +214,7 @@ finish the interior first, then rebuild the cover:
 `--pages` must match the interior. The script prints the spine and wrap size it used —
 check them against KDP's own template before uploading.
 
-The barcode area (2.0 × 1.2 in, 0.25 in in from the trim edges, bottom-right of the
+The barcode area (2.0 × 1.2 in, 0.25 in from the trim edges, bottom-right of the
 back panel) is deliberately left blank. Amazon prints the barcode there; anything you
 put in that zone gets a sticker over it.
 
@@ -225,6 +232,26 @@ still builds; the grid just comes out empty.
   before you hit publish. If the page count changed, rebuild.
 - **Cream background is a design choice, not a limitation.** If you prefer to save ink
   or want a starker look, the colours are four constants at the top of `make_cover.py`.
+
+---
+
+## Quality check
+
+`qc.py` reads the finished PDF back and compares it against the JSON it was built from —
+it does not trust the generator.
+
+```bash
+../.venv/bin/python qc.py
+```
+
+It checks that printed digits match the source cell by cell (puzzles *and* solutions),
+page count and footer numbering, section dividers, difficulty labels against the solver,
+font embedding, straight quotes, margins, the cover's spine against the interior's page
+count, and the "logic alone" claim for all 100 puzzles. Exit code is non-zero if
+anything fails.
+
+Run it after every change, and run it again after any KDP template download. `QC.md`
+records what the current files passed and the defects this check has already caught.
 
 ---
 

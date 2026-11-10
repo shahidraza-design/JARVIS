@@ -210,6 +210,31 @@ def _iter_units() -> list[list[int]]:
     return _UNITS_CACHE
 
 
+_PEERS: list[list[int]] | None = None
+
+
+def _peers(idx: int) -> list[int]:
+    """The 20 cells that share a row, column or box with idx."""
+    global _PEERS
+    if _PEERS is None:
+        _PEERS = []
+        for i in range(81):
+            r, c = divmod(i, 9)
+            br, bc = (r // 3) * 3, (c // 3) * 3
+            seen = {i}
+            out = []
+            for dr in range(3):
+                for dc in range(3):
+                    out.append((br + dr) * 9 + bc + dc)
+            out.extend(r * 9 + c2 for c2 in range(9))
+            out.extend(r2 * 9 + c for r2 in range(9))
+            for j in out:
+                if j not in seen:
+                    seen.add(j)
+            _PEERS.append(sorted(seen - {i}))
+    return _PEERS[idx]
+
+
 def _cand(g: list[int], idx: int) -> int:
     r, c = divmod(idx, 9)
     mask = FULL
@@ -224,6 +249,154 @@ def _cand(g: list[int], idx: int) -> int:
             if v:
                 mask &= ~(1 << (v - 1))
     return mask
+
+
+def _logic_solve(grid: list[int]) -> tuple[bool, int]:
+    """Solve with human techniques only, no guessing.
+
+    Returns (solved, depth) where depth is the hardest technique needed:
+    1 naked single, 2 hidden single, 3 locked candidates / naked or hidden pair,
+    4 X-wing. depth -1 means the puzzle broke; (False, 0) means it needs
+    something beyond this ladder.
+    """
+    g = grid[:]
+    cand = [set(range(1, 10)) if not g[i] else set() for i in range(81)]
+    for i in range(81):
+        if g[i]:
+            for p in _peers(i):
+                cand[p].discard(g[i])
+
+    def place(i: int, d: int) -> None:
+        g[i] = d
+        cand[i] = set()
+        for p in _peers(i):
+            cand[p].discard(d)
+
+    units = _iter_units()
+    depth = 0
+    while True:
+        if all(g):
+            return True, depth
+
+        moved = False
+        for i in range(81):
+            if not g[i] and len(cand[i]) == 1:
+                place(i, next(iter(cand[i])))
+                moved = True
+                depth = max(depth, 1)
+        if moved:
+            continue
+
+        for unit in units:
+            for d in range(1, 10):
+                spots = [i for i in unit if not g[i] and d in cand[i]]
+                if len(spots) == 1:
+                    place(spots[0], d)
+                    moved = True
+                    depth = max(depth, 2)
+            if moved:
+                break
+        if moved:
+            continue
+
+        # locked candidates — pointing (in a box) and claiming (in a line)
+        for unit in units:
+            for d in range(1, 10):
+                spots = [i for i in unit if not g[i] and d in cand[i]]
+                if len(spots) < 2:
+                    continue
+                rs = {i // 9 for i in spots}
+                cs = {i % 9 for i in spots}
+                if len(rs) == 1:
+                    r = next(iter(rs))
+                    for c in range(9):
+                        i = r * 9 + c
+                        if i not in unit and d in cand[i]:
+                            cand[i].discard(d)
+                            moved = True
+                if len(cs) == 1:
+                    c = next(iter(cs))
+                    for r in range(9):
+                        i = r * 9 + c
+                        if i not in unit and d in cand[i]:
+                            cand[i].discard(d)
+                            moved = True
+        if moved:
+            depth = max(depth, 3)
+            continue
+
+        # naked pairs
+        for unit in units:
+            pairs: dict[frozenset, list[int]] = {}
+            for i in unit:
+                if not g[i] and len(cand[i]) == 2:
+                    pairs.setdefault(frozenset(cand[i]), []).append(i)
+            for digits, cells in pairs.items():
+                if len(cells) == 2:
+                    for i in unit:
+                        if i not in cells and cand[i] & digits:
+                            cand[i] -= digits
+                            moved = True
+        if moved:
+            depth = max(depth, 3)
+            continue
+
+        # hidden pairs
+        for unit in units:
+            where: dict[tuple, set[int]] = {}
+            for d in range(1, 10):
+                spots = tuple(i for i in unit if not g[i] and d in cand[i])
+                if len(spots) == 2:
+                    where.setdefault(spots, set()).add(d)
+            for spots, digits in where.items():
+                if len(digits) == 2:
+                    for i in spots:
+                        if cand[i] != digits:
+                            cand[i] &= digits
+                            moved = True
+        if moved:
+            depth = max(depth, 3)
+            continue
+
+        # X-wing
+        for d in range(1, 10):
+            rows = {r: tuple(c for c in range(9) if not g[r * 9 + c] and d in cand[r * 9 + c])
+                    for r in range(9)}
+            rows = {r: cs for r, cs in rows.items() if len(cs) == 2}
+            for r1 in rows:
+                for r2 in rows:
+                    if r1 >= r2 or rows[r1] != rows[r2]:
+                        continue
+                    for r in range(9):
+                        if r in (r1, r2):
+                            continue
+                        for c in rows[r1]:
+                            i = r * 9 + c
+                            if d in cand[i]:
+                                cand[i].discard(d)
+                                moved = True
+            cols = {c: tuple(r for r in range(9) if not g[r * 9 + c] and d in cand[r * 9 + c])
+                    for c in range(9)}
+            cols = {c: rs for c, rs in cols.items() if len(rs) == 2}
+            for c1 in cols:
+                for c2 in cols:
+                    if c1 >= c2 or cols[c1] != cols[c2]:
+                        continue
+                    for c in range(9):
+                        if c in (c1, c2):
+                            continue
+                        for r in cols[c1]:
+                            i = r * 9 + c
+                            if d in cand[i]:
+                                cand[i].discard(d)
+                                moved = True
+        if moved:
+            depth = max(depth, 4)
+            continue
+
+        if any(not g[i] and not cand[i] for i in range(81)):
+            return False, -1
+        return all(g), depth
 
 
 def _full_grid(rng: random.Random) -> list[int]:
@@ -277,11 +450,20 @@ def _valid_so_far(g: list[int], pos: int) -> bool:
     return True
 
 
-def make_puzzle(rng: random.Random, clues: int, gentle: bool) -> tuple[list[int], list[int]]:
-    """Return (puzzle, solution). Symmetric digging, unique solution."""
+# Each tier is defined by the hardest technique its puzzles need, not just by
+# how many numbers are printed. That way the label matches the experience.
+TIERS = {
+    # depth 1-2 = naked/hidden singles, 3 = locked candidates or pairs
+    "easy":   {"clues": 41, "depth": lambda d: d <= 2},
+    "medium": {"clues": 32, "depth": lambda d: d == 2},
+    "hard":   {"clues": 28, "depth": lambda d: d >= 3},
+}
+
+
+def _dig(rng: random.Random, clues: int) -> tuple[list[int], list[int]]:
+    """Remove symmetric pairs while the solution stays unique."""
     solution = _full_grid(rng)
     puzzle = solution[:]
-
     pairs = [(i, 80 - i) for i in range(41)]
     rng.shuffle(pairs)
     count = 81
@@ -292,15 +474,32 @@ def make_puzzle(rng: random.Random, clues: int, gentle: bool) -> tuple[list[int]
             continue
         ra, rb = puzzle[a], puzzle[b]
         puzzle[a] = puzzle[b] = 0
-        trial = puzzle[:]
-        ok = _count_solutions(trial, limit=2) == 1
-        if ok and gentle:
-            ok = _singles_only_solvable(puzzle)
-        if ok:
+        if _count_solutions(puzzle[:], limit=2) == 1:
             count -= 2 if a != b else 1
         else:
             puzzle[a], puzzle[b] = ra, rb
     return puzzle, solution
+
+
+def make_puzzle(rng: random.Random, tier: str,
+                max_tries: int = 400) -> tuple[list[int], list[int]]:
+    """Return (puzzle, solution) in the requested tier.
+
+    Rejects and re-rolls until the puzzle needs exactly the techniques that tier
+    promises: singles for Easy, locked candidates/pairs for Medium, X-wing for
+    Hard. Every accepted puzzle is unique-solution and logic-solvable.
+    """
+    spec = TIERS[tier]
+    clues = spec["clues"]
+    wants = spec["depth"]
+    for attempt in range(max_tries):
+        puzzle, solution = _dig(rng, clues)
+        if _count_solutions(puzzle[:], limit=2) != 1:
+            continue
+        solved, depth = _logic_solve(puzzle)
+        if solved and wants(depth):
+            return puzzle, solution
+    raise RuntimeError(f"could not generate a {tier} puzzle that meets the tier")
 
 
 # --------------------------------------------------------------------------
@@ -469,14 +668,14 @@ def build(args) -> str:
     fonts = register_fonts()
     rng = random.Random(args.seed)
 
-    specs = ([("Easy", args.easy, 41, True),
-              ("Medium", args.medium, 33, False),
-              ("Hard", args.hard, 28, False)])
+    specs = [("Easy", args.easy, "easy"),
+             ("Medium", args.medium, "medium"),
+             ("Hard", args.hard, "hard")]
     puzzles: list[tuple[int, str, list[int], list[int]]] = []
     number = 1
-    for label, qty, clues, gentle in specs:
+    for label, qty, tier in specs:
         for _ in range(qty):
-            puzzle, solution = make_puzzle(rng, clues, gentle)
+            puzzle, solution = make_puzzle(rng, tier)
             puzzles.append((number, label, puzzle, solution))
             number += 1
 
@@ -506,7 +705,7 @@ def build(args) -> str:
     # page of first puzzle of each section
     section_start = {}
     n = 1
-    for i, (label, qty, _, _) in enumerate(specs):
+    for label, qty, _tier in specs:
         section_start[label] = n
         n += qty
     sol_divider_page = front_pages + dividers + total + 1
@@ -563,7 +762,6 @@ def build(args) -> str:
         "was verified to have exactly one solution. They are original to this book and do",
         "not reproduce puzzles published elsewhere.",
         "",
-        "For personal use.",
         "",
         f"If you enjoy this book, a review is genuinely appreciated — it helps more",
         "readers find it.",
@@ -583,7 +781,7 @@ def build(args) -> str:
         ("with no repeats anywhere.", 13, "serif"),
         ("", 6, "sans"),
         ("The starting numbers are printed in heavy black. Everything else is", 13, "serif"),
-        ("yours to fill in — in pencil, so you can rub out a wrong guess.", 13, "serif"),
+        ("yours to fill in, with a pencil, so a wrong guess can be rubbed out.", 13, "serif"),
         ("", 6, "sans"),
         ("A way in, if you are new to this", 15, "serif_b"),
         ("", 4, "sans"),
@@ -620,20 +818,20 @@ def build(args) -> str:
         ("", 5, "sans"),
         (f"Solutions\tpage {sol_start_page} onward", 13, "row"),
         ("", 16, "sans"),
-        ("Large print, one puzzle to a page", 15, "serif_b"),
+        ("Large print, one puzzle per page", 15, "serif_b"),
         ("", 4, "sans"),
         ("Every puzzle here is printed on its own page, seven inches wide, with", 13, "serif"),
-        ("digits a third of an inch tall — big enough to read at arm's length,", 13, "serif"),
+        ("digits about a third of an inch tall — easy to read at arm’s length,", 13, "serif"),
         ("with room left in every square for pencil marks. Nothing is squeezed", 13, "serif"),
         ("to fit and no grid runs into the fold of the page. If your eyes tire", 13, "serif"),
-        ("easily, this is the format that helps most.", 13, "serif"),
+        ("easily, this is the layout that helps.", 13, "serif"),
     ], fonts, 4, args.title)
     c.showPage()
 
     # ---- sections -------------------------------------------------------
     page_no = 5
     idx = 0
-    for label, qty, _, _ in specs:
+    for label, qty, _tier in specs:
         draw_divider(c, label, f"Puzzles {section_start[label]}–"
                      f"{section_start[label] + qty - 1}", fonts, page_no, args.title)
         page_no += 1
