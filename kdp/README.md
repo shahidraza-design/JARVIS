@@ -5,12 +5,16 @@ volume in about one second.
 
 ```
 kdp/
-├── sudoku_book.py                 generator (puzzles + PDF layout)
+├── sudoku_book.py                 interior generator (puzzles + PDF layout)
+├── make_cover.py                  full-wrap cover generator (spine maths)
 ├── requirements.txt               reportlab
 ├── README.md                      this file
+├── fonts/                         Playfair Display + its OFL licence
 └── out/
     ├── large-print-sudoku-for-seniors_interior_8.5x11.pdf
-    └── large-print-sudoku-for-seniors_puzzles.json
+    ├── cover-8.5x11.pdf
+    ├── large-print-sudoku-for-seniors_puzzles.json
+    └── preview-pages.png
 ```
 
 ---
@@ -178,6 +182,52 @@ reviews to justify it.
 
 ---
 
+## The cover
+
+`out/cover-8.5x11.pdf` is a full wrap for this exact interior: back cover, spine and
+front cover on one sheet, with 0.125 in bleed on the outside edges.
+
+| Spec | Value |
+| --- | --- |
+| Wrap size | 17.5338 × 11.25 in |
+| Spine width | 0.2838 in (126 pages × 0.002252 in, black ink on white paper) |
+| Trim | 8.5 × 11 in, 0.125 in bleed top/bottom/outside |
+| Panels | back 8.5 in · spine 0.2838 in · front 8.5 in |
+| Fonts | Playfair Display (400/700, OFL), DejaVu Sans/Serif — all embedded |
+| Safety | no text within 0.25 in of any trim edge; barcode zone left empty |
+
+**The spine is page count × paper thickness. It is not a fixed number.** If you add or
+remove a page from the interior, the spine changes and this wrap will be wrong. Always
+finish the interior first, then rebuild the cover:
+
+```bash
+../.venv/bin/python make_cover.py --out out/cover-8.5x11.pdf --pages 126
+```
+
+`--pages` must match the interior. The script prints the spine and wrap size it used —
+check them against KDP's own template before uploading.
+
+The barcode area (2.0 × 1.2 in, 0.25 in in from the trim edges, bottom-right of the
+back panel) is deliberately left blank. Amazon prints the barcode there; anything you
+put in that zone gets a sticker over it.
+
+The grid on the front is puzzle 1 from page 6, read from the built JSON — so the
+cover is a real sample of the book, not decoration. If the JSON is missing the cover
+still builds; the grid just comes out empty.
+
+### Before uploading the cover
+
+- **Front reads at thumbnail size.** Check it at roughly 200 px wide — that is how it
+  appears in search results. Title legibility at that size matters more than detail.
+- **Spine text only if 100+ pages.** This book qualifies at 126; KDP requires it stay
+  clear of the spine folds by 0.0625 in.
+- **Compare against KDP's template** for 8.5 × 11, 126 pages, white paper once more
+  before you hit publish. If the page count changed, rebuild.
+- **Cream background is a design choice, not a limitation.** If you prefer to save ink
+  or want a starker look, the colours are four constants at the top of `make_cover.py`.
+
+---
+
 ## Where the real upside is
 
 One book is a test, not a business. The cheap wins from this same generator:
@@ -189,6 +239,7 @@ One book is a test, not a business. The cheap wins from this same generator:
 - **The companion book.** Large-print *word search* uses almost the same page furniture
   (header rule, footer, divider pages, solution block). The hard part — a validated,
   print-correct interior pipeline — is already done.
-- **Not built yet: the cover.** It is the single biggest lever on click-through, and it
-  has to match the interior's restraint: big readable title, high contrast, no clip art
-  clutter, readable at thumbnail size.
+- **Volume two onward.** Same cover, new `--volume` and `--seed`. A consistent series
+  spine sells the set.
+- **Typeface credit.** Playfair Display is used under the SIL Open Font License; the
+  licence text ships in `fonts/`. You do not need to credit it on the cover.
