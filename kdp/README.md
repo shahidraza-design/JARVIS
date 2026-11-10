@@ -240,6 +240,13 @@ finish the interior first, then rebuild the cover:
 `--pages` must match the interior. The script prints the spine and wrap size it used —
 check them against KDP's own template before uploading.
 
+**The back-cover copy is sized to the panel, not typed in.** `make_cover.py` picks the
+largest body size (to 18 pt) that still leaves the blurb a clear inch above the closing
+rule, wraps every paragraph to the measured width, and pulls the odd word down so no
+line ends as a single orphan ("…and a / pencil."). Today that lands at 16.4 pt, which
+suits a large-print book: the person reading the back cover is the person the large type
+is for. Edit the copy in `main()` and the size re-solves itself — nothing to retune.
+
 The barcode area (2.0 × 1.2 in, 0.25 in from the trim edges, bottom-right of the
 back panel) is deliberately left blank. Amazon prints the barcode there; anything you
 put in that zone gets a sticker over it.

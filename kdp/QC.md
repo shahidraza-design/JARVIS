@@ -86,6 +86,9 @@ Recorded because they are the reason to run it again.
     heading and into the body text after it. Both cover scripts now set it on every text
     block, zero included. The blurb's line breaks changed once fixed, which is why the
     earlier version read a line long.
+15. **Back-cover copy stopped two inches short of the closing rule**, leaving a hole in
+    the middle of the panel, and it was set at 11.4 pt on a large-print book. The copy is
+    now sized to the panel and wrapped to the measure: 16.4 pt, no hole, no orphan line.
 
 ---
 

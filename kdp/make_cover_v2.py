@@ -22,7 +22,7 @@ from reportlab.lib.colors import Color, HexColor
 from reportlab.pdfgen import canvas
 
 from make_cover import (BLEED, PAPER_PPI, TRIM_H, TRIM_W, drawn, fit,
-                        register_fonts, width)
+                        register_fonts, width, wrap)
 
 NAVY = HexColor("#18263E")
 CREAM = HexColor("#F9F3E3")
@@ -34,22 +34,6 @@ GOLD_DEEP = HexColor("#8E6C31")
 GRID_FINE = Color(0.271, 0.314, 0.376)      # navy + 20% cream
 GRID_BLOCK = Color(0.365, 0.396, 0.451)     # navy + 32% cream
 BG = NAVY
-
-
-def wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
-    """Break a paragraph to a measured width."""
-    words, lines, cur = text.split(), [], ""
-    for word in words:
-        trial = f"{cur} {word}".strip()
-        if width(trial, font, size) <= max_w:
-            cur = trial
-        else:
-            if cur:
-                lines.append(cur)
-            cur = word
-    if cur:
-        lines.append(cur)
-    return lines
 
 
 def build(args) -> str:

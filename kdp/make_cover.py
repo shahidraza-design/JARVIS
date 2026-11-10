@@ -82,6 +82,34 @@ def width(text: str, font: str, size: float, tracking: float = 0.0) -> float:
     return w
 
 
+def wrap(text: str, font: str, size: float, max_w: float) -> list[str]:
+    """Break one paragraph to a measured width, in points.
+
+    A last line of a single word ("...and a / pencil.") is a typographic
+    defect, so one word is pulled down from the line above when that still
+    fits. This also stops a too-large body size from filling the panel with
+    an accidental orphan.
+    """
+    lines, cur = [], ""
+    for word in text.split():
+        trial = f"{cur} {word}".strip()
+        if width(trial, font, size) <= max_w:
+            cur = trial
+        else:
+            if cur:
+                lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+
+    if len(lines) > 1 and len(lines[-1].split()) == 1:
+        head, last_word = lines[-2].rsplit(" ", 1) if " " in lines[-2] else ("", lines[-2])
+        merged = f"{lines[-1]} {last_word}" if not head else f"{last_word} {lines[-1]}"
+        if head and width(merged, font, size) <= max_w:
+            lines[-2], lines[-1] = head, merged
+    return lines
+
+
 def fit(text: str, font: str, max_w: float, start: float,
         tracking: float = 0.0, floor: float = 10.0) -> float:
     size = start
@@ -254,41 +282,80 @@ def build(args) -> str:
     c.setLineWidth(0.9)
     c.line(bx, by(1.12), pt(back_x + TRIM_W - 0.55), by(1.12))
 
-    head_size = fit(args.back_headline, f["display700"], bw, 25)
-    # wrap the headline on two lines
-    drawn(c, args.back_headline, bx, by(1.78), f["display700"], head_size, NAVY)
-
+    # --- back copy ------------------------------------------------------
+    # Set as large as the panel allows, then balanced in what is left.
+    # A large-print book should not carry 10-pt back-cover copy, and a blurb
+    # that stops two inches above the closing rule reads as a mistake.
     INK = Color(0.13, 0.15, 0.19)
-    y = 2.50
-    for para in args.back_paras:
-        for line in para:
-            drawn(c, line, bx, by(y), f["serif"], 11.4, INK)
-            y += 0.248
-        y += 0.24
+    TOP = 1.74                      # headline cap line, in from the trim top
+    HANG = 0.32                     # bullet indent, in inches
+    RULE_T = TRIM_H - 1.95          # the closing rule, pinned near the foot
+    CLOSE = 1.00                    # air wanted between the copy and the rule
 
-    y += 0.04
-    for bullet in args.bullets:
-        c.setFillColor(GOLD)
-        c.setFont(f["sans_b"], 11.0)
-        c.drawString(bx, by(y), "—")
-        drawn(c, bullet, bx + pt(0.28), by(y), f["serif"], 11.4, INK)
-        y += 0.335
+    head_size = fit(args.back_headline, f["display700"], bw, 26)
 
-    y += 0.18
-    for para in args.back_tail:
-        for line in para:
-            drawn(c, line, bx, by(y), f["serif"], 11.4, INK)
-            y += 0.248
-        y += 0.22
+    def layout(size, offset=0.0):
+        """Lay the panel out at a given body size; return rows and the end y."""
+        lead = size * 1.38 / 72.0
+        rows, y = [], TOP + offset
+        for line in wrap(args.back_headline, f["display700"], head_size, bw):
+            rows.append(("head", line, y))
+            y += head_size * 1.30 / 72.0
+        y += head_size * 0.52 / 72.0
+        for para in args.back_paras:
+            for line in wrap(para, f["serif"], size, bw):
+                rows.append(("body", line, y))
+                y += lead
+            y += lead * 0.82
+        y += 0.04
+        for bullet in args.bullets:
+            lines = wrap(bullet, f["serif"], size, bw - pt(HANG))
+            for i, line in enumerate(lines):
+                rows.append(("bullet" if i == 0 else "hang", line, y))
+                y += lead
+            y += lead * 0.34
+        y += lead * 0.85
+        for para in args.back_tail:
+            for line in wrap(para, f["serif"], size, bw):
+                rows.append(("body", line, y))
+                y += lead
+            y += lead * 0.78
+        return rows, y
 
-    # closing rule, then the author beneath it. Centred, it clears the barcode
-    # block (which starts 6.375 in from the left trim edge) without guessing.
-    rule_y = by(TRIM_H - 1.95)
+    # Pick the largest body size that still leaves the copy a clear inch above
+    # the closing rule. Larger copy fills the panel; too large and the blurb
+    # crowds the rule, which looks like a mistake rather than a decision.
+    avail = RULE_T - CLOSE - TOP
+    body, best = 12.0, 12.0
+    while body <= 18.0:
+        if layout(body)[1] - TOP <= avail:
+            best = body
+        body = round(body + 0.1, 1)
+    rows, end = layout(best)
+    body = best
+
+    for kind, line, y in rows:
+        if kind == "head":
+            drawn(c, line, bx, by(y), f["display700"], head_size, NAVY)
+        elif kind == "bullet":
+            c.setFillColor(GOLD)
+            c.setFont(f["sans_b"], body * 0.95)
+            c.drawString(bx, by(y), "\u2014")
+            drawn(c, line, bx + pt(HANG), by(y), f["serif"], body, INK)
+        elif kind == "hang":
+            drawn(c, line, bx + pt(HANG), by(y), f["serif"], body, INK)
+        else:
+            drawn(c, line, bx, by(y), f["serif"], body, INK)
+
+    # Closing rule, then the author beneath it. The rule stays at the foot of
+    # the panel: with the text sized to leave it about an inch of air, the
+    # space above reads as margin, and both ends clear the barcode block.
+    rule_t = RULE_T
     c.setStrokeColor(GOLD)
     c.setLineWidth(0.9)
-    c.line(bx, rule_y, pt(back_x + TRIM_W - 0.55), rule_y)
+    c.line(bx, by(rule_t), pt(back_x + TRIM_W - 0.55), by(rule_t))
 
-    drawn(c, args.author.upper(), pt(back_x + TRIM_W / 2.0), by(TRIM_H - 1.52),
+    drawn(c, args.author.upper(), pt(back_x + TRIM_W / 2.0), by(rule_t + 0.46),
           f["sans"], 8.6, NAVY, tracking=3.0, align="center")
 
     # Barcode: KDP prints its own in a 2.0 x 1.2 in clear area 0.25 in from the
@@ -325,22 +392,22 @@ def main() -> int:
         print(f"  note: could not load {args.puzzles_json} ({exc}); motif left empty")
 
     args.back_paras = [
-        ["100 Sudoku puzzles, printed one per page on a seven-inch grid, with",
-         "digits about a third of an inch tall. Room to think, room for pencil",
-         "marks, and none of the cramped little squares that make ordinary",
-         "puzzle books tiring."],
+        "100 Sudoku puzzles, printed one per page on a seven-inch grid, with "
+        "digits about a third of an inch tall. Room to think, room for pencil "
+        "marks, and none of the cramped little squares that make ordinary "
+        "puzzle books tiring.",
     ]
     args.bullets = [
-        "40 Easy, 35 Medium, 25 Hard — every one solvable by logic alone",
+        "40 Easy, 35 Medium, 25 Hard — each solvable by logic alone",
         "Each puzzle checked to have exactly one solution",
         "A how-to-play refresher and a three-step way in",
         "Full solutions at the back, six to a page",
     ]
     args.back_tail = [
-        ["The Easy section can be finished by simple scanning, which makes it a",
-         "gentle return for anyone coming back to Sudoku. The Hard section is a",
-         "genuine step up."],
-        ["Large print. One puzzle per page. A quiet half hour and a pencil."],
+        "The Easy section can be finished by simple scanning, which makes it a "
+        "gentle return for anyone coming back to Sudoku. The Hard section is a "
+        "genuine step up.",
+        "Large print. One puzzle per page. A quiet half hour and a pencil.",
     ]
 
     path = build(args)
